@@ -24,9 +24,6 @@
 <link rel=stylesheet href="css/info.css"/>
 <script src="js/info.js"></script>
 <script src="js/socket.io.js"></script>
-<script>
-  var socket = io();
-</script>
 <div id="infoButton"></div>
 <div id="infoBox" title="Demo Information">
 Controls: Press A/D to move continuously, press LEFT/RIGHT to move in discrete jumps,
@@ -54,10 +51,14 @@ var clock = new THREE.Clock();
 var keyboard = new KeyboardState();
 
 // custom global variables
+
+var socket = io();	
 var mesh;
 
 init();
+socket.emit('new', guid());
 animate();
+
 
 // FUNCTIONS 		
 function init() 
@@ -153,7 +154,8 @@ function update()
 		mesh.material.color = new THREE.Color(0xff0000);
 	if ( keyboard.up("R") )
 		mesh.material.color = new THREE.Color(0x0000ff);
-		
+	
+	socket.emit('location', mesh.position.x+' '+mesh.position.y+' '+mesh.position.z);
 	controls.update();
 	stats.update();
 }
@@ -161,6 +163,16 @@ function update()
 function render() 
 {
 	renderer.render( scene, camera );
+}
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
 }
 
 </script>
