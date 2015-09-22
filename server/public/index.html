@@ -53,16 +53,21 @@ var keyboard = new KeyboardState();
 // custom global variables
 
 var socket = io();	
+socket.on('location', function(location) { location_received(location); });
+socket.on('player', function(player) { new_player(player) })
+var userid = guid();
+var network_meshes = {};
 var mesh;
 
+
 init();
-socket.emit('new', guid());
+socket.emit('new', userid);
 animate();
 
 
 // FUNCTIONS 		
 function init() 
-{
+{		
 	// SCENE
 	scene = new THREE.Scene();
 	// CAMERA
@@ -104,7 +109,6 @@ function init()
 	////////////
 	// CUSTOM //
 	////////////
-	
 	var geometry = new THREE.SphereGeometry( 30, 32, 16 );
 	var material = new THREE.MeshLambertMaterial( { color: 0x0000ff } );
 	mesh = new THREE.Mesh( geometry, material );
@@ -184,7 +188,7 @@ function update()
 	if ( keyboard.up("R") )
 		mesh.material.color = new THREE.Color(0x0000ff);
 	
-	socket.emit('location', mesh.position.x+' '+mesh.position.y+' '+mesh.position.z);
+	socket.emit('location', userid+' '+mesh.position.x+' '+mesh.position.y+' '+mesh.position.z);
 	controls.update();
 	stats.update();
 }
@@ -192,6 +196,25 @@ function update()
 function render() 
 {
 	renderer.render( scene, camera );
+}
+
+function new_player(player) {
+	var toks = player.split(' ');
+	var geometry = new THREE.SphereGeometry( 30, 32, 16 );
+	var material = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+	var player_mesh = new THREE.Mesh( geometry, material );
+	player_mesh.position.set(toks[1],toks[2],toks[3]);
+	network_meshes[toks[0]] = player_mesh;
+	scene.add(player_mesh);
+}
+
+function location_received(location){
+	// user_id x y z
+	console.log(location);
+	var tokens = location.split(' ');
+	if (tokens[0] != userid) {
+		network_meshes[tokens[0]].position.set(tokens[1], tokens[2], tokens[3]);
+	};
 }
 
 function guid() {
