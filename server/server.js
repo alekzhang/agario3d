@@ -2,36 +2,52 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var user_count = 0;
 var user_table = new Array();
 
 app.use(express.static(__dirname + '/public'));
 
 io.on('connection', function(socket){
   console.log('a user connected');
+  var player_id = '';
   for(key in user_table) {
-  	socket.emit('player', key+' '+user_table[key].position);
+  	socket.emit('player', key+' '+user_table[key].position+' '+user_table[key].it);
   }
-  socket.on('new', function(id) { new_connection(id, socket) });
+  socket.on('new', function(id) { player_id = id; new_connection(id, socket); });
   socket.on('location', function(location) { new_location(location) });
+  socket.on('disconnect', function() {
+  	console.log('a user disconnected');
+  	io.emit('disconnect', player_id);
+  	delete user_table[player_id];
+  	user_count--;
+  })
 });
 http.listen(3000, function(){
   console.log('listening on *:3000');
 });
 
-function new_connection(id, socket){
+function new_connection(id_location, socket){
+	var toks = id_location.split(' ');
+	var id = toks[0];
+	var position = toks[1]+' '+toks[2]+' '+toks[3];
 	// add the user to the user_table
-	user_table[id] = {'socket':socket};
+	user_table[id] = {'socket':socket, 'position':position, it:false};
+	user_count++;
+	// if user is first, they're it!
+	if(user_count == 1) {
+		user_table[id].it = true;
+		socket.emit('it', id);
+	}
 	// tell others about the user
-	io.emit('player', id+' 10 20 40');
+	io.emit('player', id+' '+position+' '+user_table[id].it);
 }
 
-function new_location(location){
-	var tok = location.split(' ');
+function new_location(id_location){
+	var tok = id_location.split(' ');
 	// store where they are
 	user_table[tok[0]].position = tok[1]+' '+tok[2]+' '+tok[3];
 	// let everyone else know where they are
-	console.log(location); 
 	for(key in user_table) {
-		user_table[key].socket.emit('location', location);
+		user_table[key].socket.emit('location', id_location);
 	}
 }
