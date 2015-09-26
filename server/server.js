@@ -11,19 +11,21 @@ io.on('connection', function(socket){
   console.log('a user connected');
   var player_id = '';
   for(key in user_table) {
+  	console.log('user_table has ' + key + ' ' + user_table[key]);
   	socket.emit('player', key+' '+user_table[key].position+' '+user_table[key].it);
   }
-  socket.on('new', function(id) { player_id = id; new_connection(id, socket); });
+  socket.on('new', function(id) { player_id = id.split(' ')[0]; new_connection(id, socket); });
   socket.on('location', function(location) { new_location(location) });
   socket.on('disconnect', function() {
   	console.log('a user disconnected');
   	io.emit('disconnect', player_id);
   	delete user_table[player_id];
+  	console.log('deleting ' + player_id);
   	user_count--;
   })
 });
 http.listen(3000, function(){
-  console.log('listening on *:3000');
+  console.log('listening on *:3000 bitches');
 });
 
 function new_connection(id_location, socket){
@@ -50,4 +52,5 @@ function new_location(id_location){
 	for(key in user_table) {
 		user_table[key].socket.emit('location', id_location);
 	}
+	return tok[0];
 }
