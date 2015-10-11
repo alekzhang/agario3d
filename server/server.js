@@ -1,11 +1,17 @@
 var express = require('express');
 var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+app.get('/', function(req,res) {
+  res.sendFile(__dirname + '/public/index.html');
+});
+app.get('/*', function(req,res) {
+  var file = req.params[0];
+  res.sendFile(__dirname + '/public/' + file);
+});
+var http = require('http');
+var server = http.createServer(app);
+var io = require('socket.io').listen(server);
 var user_count = 0;
 var user_table = new Array();
-
-app.use(express.static(__dirname + '/public'));
 
 io.on('connection', function(socket){
   console.log('a user connected');
@@ -24,10 +30,7 @@ io.on('connection', function(socket){
   	user_count--;
   })
 });
-http.listen(3000, function(){
-  console.log('listening on *:3000 bitches');
-});
-
+server.listen(8080);
 function new_connection(id_location, socket){
 	var toks = id_location.split(' ');
 	var id = toks[0];
